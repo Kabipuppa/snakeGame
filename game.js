@@ -104,7 +104,6 @@ function checkCollision() {
   }
 }
 
-//игра
 function game() {
   drawChess();
   drawSnake();
