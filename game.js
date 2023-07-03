@@ -1,17 +1,17 @@
-import './style.scss';
-import 'reset-css';
-import { KeyCodes } from './helpers/keys';
+import "./style.scss";
+import "reset-css";
+import { KeyCodes } from "./helpers/keys";
 import {
   CANVAS,
-  CTX,
   BOX_SIZE,
   COLUMNS_COUNT,
   ROWS_COUNT,
   Colors,
-} from './helpers/const';
+  drawCell,
+} from "./helpers/const";
 let score = 0;
-document.getElementById('score').innerHTML = `Счет: ${score}`;
-let dx = BOX_SIZE; // начальная скорость змеи
+document.getElementById("score").innerHTML = `Счет: ${score}`;
+let dx = BOX_SIZE;
 let dy = 0;
 setupGame(); //запуск игры
 
@@ -32,8 +32,8 @@ function drawChess() {
     for (let col = 0; col < COLUMNS_COUNT; col++) {
       let x = row * BOX_SIZE;
       let y = col * BOX_SIZE;
-      CTX.fillStyle = (row + col) % 2 === 0 ? Colors.Odd : Colors.Even;
-      CTX.fillRect(x, y, BOX_SIZE, BOX_SIZE);
+      let colorChess = (row + col) % 2 === 0 ? Colors.Odd : Colors.Even;
+      drawCell(x, y, colorChess);
     }
   }
 }
@@ -44,8 +44,7 @@ let food = {
   y: 2 * BOX_SIZE,
 };
 function drawFood() {
-  CTX.fillStyle = Colors.FoodColor;
-  CTX.fillRect(food.x, food.y, BOX_SIZE, BOX_SIZE);
+  drawCell(food.x, food.y, Colors.FoodColor);
 }
 
 //змея
@@ -59,11 +58,13 @@ let initalSnake = [
 let snake = [...initalSnake];
 
 function drawSnake() {
-  CTX.fillStyle = Colors.SnakeColor;
   snake.forEach((part) => {
-    CTX.fillRect(part.x, part.y, BOX_SIZE, BOX_SIZE);
+    drawCell(part.x, part.y, Colors.SnakeColor);
   });
 }
+
+// конец игры
+function hasGameEnded() {}
 
 function moveSnake() {
   const snakeHead = { x: snake[0].x + dx, y: snake[0].y + dy };
@@ -72,7 +73,7 @@ function moveSnake() {
   if (hasEatFood) {
     score += 1;
     // счет
-    document.getElementById('score').innerHTML = `Счет: ${score}`;
+    document.getElementById("score").innerHTML = `Счет: ${score}`;
     generateFood();
   } else {
     snake.pop();
@@ -94,13 +95,13 @@ function generateFood() {
   food.y = (Math.floor(Math.random() * 16 - 1) + 1) * BOX_SIZE;
   //проверка если еда сгенерилась внутри змеи
   snake.forEach((part) => {
-    const hasEat = part.x === food.x && part.y === food.y;
-    if (hasEat) generateFood();
+    const hasEaten = part.x === food.x && part.y === food.y;
+    if (hasEaten) generateFood();
   });
 }
 
 //клавиши
-window.addEventListener('keydown', keyDown);
+window.addEventListener("keydown", keyDown);
 
 function keyDown(event) {
   const isArrowLeftPressed = dx === BOX_SIZE;
