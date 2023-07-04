@@ -7,26 +7,27 @@ import {
   COLUMNS_COUNT,
   ROWS_COUNT,
   Colors,
-  drawCell,
 } from "./helpers/const";
+import { drawCell, setScore } from "./helpers/utils";
 let score = 0;
-document.getElementById("score").innerHTML = `Счет: ${score}`;
 let dx = BOX_SIZE;
 let dy = 0;
-setupGame(); //запуск игры
+
+setInterval(setupGame, 200); //запуск игры
+setScore(score);
 
 function setupGame() {
-  setTimeout(function onTick() {
-    drawChess();
-    drawFood();
-    moveSnake();
-    drawSnake();
+  if (hasGameEnded()) {
+    return alert(`конец игры! Счет: ${score}`);
+  }
 
-    setupGame();
-  }, 1000 / 7);
+  drawChess();
+  drawFood();
+  moveSnake();
+  drawSnake();
 }
 
-// фон
+// фонs
 function drawChess() {
   for (let row = 0; row < ROWS_COUNT; row++) {
     for (let col = 0; col < COLUMNS_COUNT; col++) {
@@ -63,22 +64,19 @@ function drawSnake() {
   });
 }
 
-// конец игры
-function hasGameEnded() {}
-
 function moveSnake() {
   const snakeHead = { x: snake[0].x + dx, y: snake[0].y + dy };
   snake.unshift(snakeHead);
   const hasEatFood = snake[0].x === food.x && snake[0].y === food.y;
+  // съела еду
   if (hasEatFood) {
     score += 1;
-    // счет
-    document.getElementById("score").innerHTML = `Счет: ${score}`;
+    setScore(score);
     generateFood();
   } else {
     snake.pop();
   }
-  //если вышла за стену
+  // вышла за стену
   if (snake[0].x < 0) {
     snake[0].x = CANVAS.clientWidth - BOX_SIZE;
   } else if (snake[0].x >= CANVAS.clientWidth) {
@@ -93,14 +91,12 @@ function moveSnake() {
 function generateFood() {
   food.x = (Math.floor(Math.random() * 16 - 1) + 1) * BOX_SIZE;
   food.y = (Math.floor(Math.random() * 16 - 1) + 1) * BOX_SIZE;
-  //проверка если еда сгенерилась внутри змеи
-  snake.forEach((part) => {
-    const hasEaten = part.x === food.x && part.y === food.y;
-    if (hasEaten) generateFood();
-  });
+  //еда сгенерилась внутри змеи
+  const hasEaten = snake.some(({ x, y }) => x === food.x && y === food.y);
+  if (hasEaten) generateFood();
 }
 
-//клавиши
+//стрелки(направление)
 window.addEventListener("keydown", keyDown);
 
 function keyDown(event) {
@@ -108,24 +104,29 @@ function keyDown(event) {
   const isArrowUpPressed = dy === BOX_SIZE;
   const isArrowRightPressed = dx === -BOX_SIZE;
   const isArrowDownPressed = dy === -BOX_SIZE;
-  //влево
   if (event.keyCode === KeyCodes.LEFT && !isArrowLeftPressed) {
     dx = -BOX_SIZE;
     dy = 0;
   }
-  //вверх
   if (event.keyCode === KeyCodes.UP && !isArrowUpPressed) {
     dx = 0;
     dy = -BOX_SIZE;
   }
-  //вправо
   if (event.keyCode === KeyCodes.RIGHT && !isArrowRightPressed) {
     dx = BOX_SIZE;
     dy = 0;
   }
-  //вниз
   if (event.keyCode === KeyCodes.DOWN && !isArrowDownPressed) {
     dx = 0;
     dy = BOX_SIZE;
+  }
+}
+
+// конец игры
+function hasGameEnded() {
+  for (let i = 1; i < snake.length; i++) {
+    const hasBodyCollided =
+      snake[i].x === snake[0].x && snake[i].y === snake[0].y;
+    if (hasBodyCollided) return true;
   }
 }

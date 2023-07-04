@@ -9,9 +9,5 @@ const Colors = {
   SnakeColor: "#fff",
   FoodColor: "#4cafab",
 };
-const drawCell = (x, y, color) => {
-  CTX.fillStyle = color;
-  CTX.fillRect(x, y, BOX_SIZE, BOX_SIZE);
-};
 
-export { CANVAS, CTX, BOX_SIZE, COLUMNS_COUNT, ROWS_COUNT, Colors, drawCell };
+export { CANVAS, CTX, BOX_SIZE, COLUMNS_COUNT, ROWS_COUNT, Colors };
