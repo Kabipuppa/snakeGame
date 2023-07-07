@@ -1,24 +1,34 @@
-import "./style.scss";
-import "reset-css";
-import { KeyCodes } from "./helpers/keys";
+import './style.scss';
+import 'reset-css';
+import { KeyCodes } from './helpers/keys';
 import {
   CANVAS,
   BOX_SIZE,
   COLUMNS_COUNT,
   ROWS_COUNT,
   Colors,
-} from "./helpers/const";
-import { drawCell, setScore } from "./helpers/utils";
+} from './helpers/const';
+import { drawCell, setScore } from './helpers/utils';
 let score = 0;
 let dx = BOX_SIZE;
 let dy = 0;
+let timerId;
 
-setInterval(setupGame, 200); //запуск игры
+timerId = setInterval(setupGame, 200); //запуск игры
 setScore(score);
 
 function setupGame() {
   if (hasGameEnded()) {
-    return alert(`конец игры! Счет: ${score}`);
+    alert(`конец игры! Счет: ${score}`);
+    let isEnd = confirm('Начать игру заново?');
+    clearInterval(timerId);
+    if (isEnd) {
+      dx = BOX_SIZE;
+      dy = 0;
+      score = 0;
+      snake = [...initalSnake];
+      timerId = setInterval(setupGame, 200);
+    }
   }
 
   drawChess();
@@ -70,8 +80,7 @@ function moveSnake() {
   const hasEatFood = snake[0].x === food.x && snake[0].y === food.y;
   // съела еду
   if (hasEatFood) {
-    score += 1;
-    setScore(score);
+    setScore(++score);
     generateFood();
   } else {
     snake.pop();
@@ -97,7 +106,7 @@ function generateFood() {
 }
 
 //стрелки(направление)
-window.addEventListener("keydown", keyDown);
+window.addEventListener('keydown', keyDown);
 
 function keyDown(event) {
   const isArrowLeftPressed = dx === BOX_SIZE;
