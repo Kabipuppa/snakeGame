@@ -26,6 +26,7 @@ function setupGame() {
       dx = BOX_SIZE;
       dy = 0;
       score = 0;
+      setScore(score);
       snake = [...initalSnake];
       timerId = setInterval(setupGame, 200);
     }
