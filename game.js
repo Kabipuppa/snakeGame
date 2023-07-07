@@ -1,25 +1,51 @@
 import './style.scss';
 import 'reset-css';
-export let dx = 0;
-export let dy = 0;
 import { KeyCodes } from './helpers/keys';
 import {
   CANVAS,
-  CTX,
   BOX_SIZE,
   COLUMNS_COUNT,
   ROWS_COUNT,
   Colors,
 } from './helpers/const';
+import { drawCell, setScore } from './helpers/utils';
+let score = 0;
+let dx = BOX_SIZE;
+let dy = 0;
+let timerId;
 
-// фон
+timerId = setInterval(setupGame, 200); //запуск игры
+setScore(score);
+
+function setupGame() {
+  if (hasGameEnded()) {
+    alert(`конец игры! Счет: ${score}`);
+    let isEnd = confirm('Начать игру заново?');
+    clearInterval(timerId);
+    if (isEnd) {
+      dx = BOX_SIZE;
+      dy = 0;
+      score = 0;
+      setScore(score);
+      snake = [...initalSnake];
+      timerId = setInterval(setupGame, 200);
+    }
+  }
+
+  drawChess();
+  drawFood();
+  moveSnake();
+  drawSnake();
+}
+
+// фонs
 function drawChess() {
   for (let row = 0; row < ROWS_COUNT; row++) {
     for (let col = 0; col < COLUMNS_COUNT; col++) {
       let x = row * BOX_SIZE;
       let y = col * BOX_SIZE;
-      CTX.fillStyle = (row + col) % 2 === 0 ? Colors.Odd : Colors.Even;
-      CTX.fillRect(x, y, BOX_SIZE, BOX_SIZE);
+      let colorChess = (row + col) % 2 === 0 ? Colors.Odd : Colors.Even;
+      drawCell(x, y, colorChess);
     }
   }
 }
@@ -30,33 +56,37 @@ let food = {
   y: 2 * BOX_SIZE,
 };
 function drawFood() {
-  CTX.fillStyle = Colors.FoodColor;
-  CTX.fillRect(food.x, food.y, BOX_SIZE, BOX_SIZE);
+  drawCell(food.x, food.y, Colors.FoodColor);
 }
 
 //змея
-let snake = [
-  { x: 8 * BOX_SIZE, y: 5 * BOX_SIZE },
-  { x: 7 * BOX_SIZE, y: 5 * BOX_SIZE },
-  { x: 6 * BOX_SIZE, y: 5 * BOX_SIZE },
+let initalSnake = [
   { x: 5 * BOX_SIZE, y: 5 * BOX_SIZE },
+  { x: 4 * BOX_SIZE, y: 5 * BOX_SIZE },
+  { x: 3 * BOX_SIZE, y: 5 * BOX_SIZE },
+  { x: 2 * BOX_SIZE, y: 5 * BOX_SIZE },
 ];
+
+let snake = [...initalSnake];
+
 function drawSnake() {
-  CTX.fillStyle = Colors.SnakeColor;
-  for (let i = 0; snake.length > i; i++) {
-    CTX.fillRect(snake[i].x, snake[i].y, BOX_SIZE, BOX_SIZE);
-  }
+  snake.forEach((part) => {
+    drawCell(part.x, part.y, Colors.SnakeColor);
+  });
 }
 
-//клавиши
-window.addEventListener('keydown', keyDown);
-
-//движение
 function moveSnake() {
   const snakeHead = { x: snake[0].x + dx, y: snake[0].y + dy };
   snake.unshift(snakeHead);
-  snake.pop();
-  //если вышла за стену
+  const hasEatFood = snake[0].x === food.x && snake[0].y === food.y;
+  // съела еду
+  if (hasEatFood) {
+    setScore(++score);
+    generateFood();
+  } else {
+    snake.pop();
+  }
+  // вышла за стену
   if (snake[0].x < 0) {
     snake[0].x = CANVAS.clientWidth - BOX_SIZE;
   } else if (snake[0].x >= CANVAS.clientWidth) {
@@ -68,47 +98,45 @@ function moveSnake() {
   }
 }
 
+function generateFood() {
+  food.x = (Math.floor(Math.random() * 16 - 1) + 1) * BOX_SIZE;
+  food.y = (Math.floor(Math.random() * 16 - 1) + 1) * BOX_SIZE;
+  //еда сгенерилась внутри змеи
+  const hasEaten = snake.some(({ x, y }) => x === food.x && y === food.y);
+  if (hasEaten) generateFood();
+}
+
+//стрелки(направление)
+window.addEventListener('keydown', keyDown);
+
 function keyDown(event) {
-  const ArrowLeft = dx === BOX_SIZE;
-  const ArrowUp = dy === BOX_SIZE;
-  const ArrowRight = dx === -BOX_SIZE;
-  const ArrowDown = dy === -BOX_SIZE;
-  //влево
-  if (event.keyCode === KeyCodes.LEFT && !ArrowLeft) {
+  const isArrowLeftPressed = dx === BOX_SIZE;
+  const isArrowUpPressed = dy === BOX_SIZE;
+  const isArrowRightPressed = dx === -BOX_SIZE;
+  const isArrowDownPressed = dy === -BOX_SIZE;
+  if (event.keyCode === KeyCodes.LEFT && !isArrowLeftPressed) {
     dx = -BOX_SIZE;
     dy = 0;
   }
-  //вверх
-  if (event.keyCode === KeyCodes.UP && !ArrowUp) {
+  if (event.keyCode === KeyCodes.UP && !isArrowUpPressed) {
     dx = 0;
     dy = -BOX_SIZE;
   }
-  //вправо
-  if (event.keyCode === KeyCodes.RIGHT && !ArrowRight) {
+  if (event.keyCode === KeyCodes.RIGHT && !isArrowRightPressed) {
     dx = BOX_SIZE;
     dy = 0;
   }
-  //вниз
-  if (event.keyCode === KeyCodes.DOWN && !ArrowDown) {
+  if (event.keyCode === KeyCodes.DOWN && !isArrowDownPressed) {
     dx = 0;
     dy = BOX_SIZE;
   }
 }
-drawFood();
-//змея съела яблоко
-function checkCollision() {
-  if (snake[0].x === food.x && snake[0].y === food.y) {
-    food.x = (Math.floor(Math.random() * 16 - 1) + 1) * BOX_SIZE;
-    food.y = (Math.floor(Math.random() * 16 - 1) + 1) * BOX_SIZE;
-    setTimeout(drawFood(), 1000);
+
+// конец игры
+function hasGameEnded() {
+  for (let i = 1; i < snake.length; i++) {
+    const hasBodyCollided =
+      snake[i].x === snake[0].x && snake[i].y === snake[0].y;
+    if (hasBodyCollided) return true;
   }
 }
-
-function game() {
-  drawChess();
-  drawSnake();
-  moveSnake();
-  checkCollision();
-}
-//запуск игры
-setInterval(game, 200);
